@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tier-service
+  labels:
+    app: tier-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tier-service
+  template:
+    metadata:
+      labels:
+        app: tier-service
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-microservice-worker
+      containers:
+        - name: tier-service
+          image: mariammseddi12/tier-service:latest
+          ports:
+            - containerPort: 8085   # Mets le port correct de ton Spring Boot
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://tier-db-service:3306/tier_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "root"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_JPA_SHOW_SQL
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tier-service
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "shared-ip"
+spec:
+  selector:
+    app: tier-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+  type: LoadBalancer
+  loadBalancerIP: 51.210.7.4
+
